@@ -46,10 +46,7 @@ public abstract class ChunkedDatasetBase extends DatasetBase implements ChunkedD
 
 	protected void fillDataFromChunk(final Chunk chunk,
 									 final byte[] dataArray,
-									 final int[] chunkDimensions,
-									 final int[] chunkInternalOffsets,
-									 final int[] dataOffsets,
-									 final int fastestChunkDim,
+									 ChunkProperties chunkProperties,
 									 final int elementSize) {
 
 		logger.trace("Filling data from chunk '{}'", chunk);
@@ -63,11 +60,11 @@ public abstract class ChunkedDatasetBase extends DatasetBase implements ChunkedD
 
 		if (!isPartialChunk(chunk)) {
 			// Not a partial chunk so can always copy the max amount
-			final int length = fastestChunkDim * elementSize;
-			for (int i = 0; i < chunkInternalOffsets.length; i++) {
+			final int length = chunkProperties.fastestChunkDim * elementSize;
+			for (int i = 0; i < chunkProperties.chunkInternalOffsets.length; i++) {
 				System.arraycopy(
-					chunkData, chunkInternalOffsets[i], // src
-					dataArray, (dataOffsets[i] + initialChunkOffset) * elementSize, // dest
+					chunkData, chunkProperties.chunkInternalOffsets[i], // src
+					dataArray, (chunkProperties.dataOffsets[i] + initialChunkOffset) * elementSize, // dest
 					length); // length
 			}
 		} else {
@@ -75,24 +72,24 @@ public abstract class ChunkedDatasetBase extends DatasetBase implements ChunkedD
 			// Partial chunk
 			final int highestDimIndex = getDimensions().length - 1;
 
-			for (int i = 0; i < chunkInternalOffsets.length; i++) {
+			for (int i = 0; i < chunkProperties.chunkInternalOffsets.length; i++) {
 				// Quick check first if the data starts outside then we know this part of the chunk can be skipped
 				// Does not consider dimensions
-				if (dataOffsets[i] > dataArray.length) {
+				if (chunkProperties.dataOffsets[i] > dataArray.length) {
 					continue;
 				}
 				// Is this part of the chunk outside the dataset including dimensions?
-				if (partOfChunkIsOutsideDataset(chunkInternalOffsets[i] / elementSize, chunkDimensions, chunkOffset)) {
+				if (partOfChunkIsOutsideDataset(chunkProperties.chunkInternalOffsets[i] / elementSize, chunkProperties.chunkDimensions, chunkOffset)) {
 					continue;
 				}
 
 				// Its inside so we need to copy at least something. Now work out how much?
-				final int length = elementSize * Math.min(fastestChunkDim,
-					fastestChunkDim - (chunkOffset[highestDimIndex] + chunkDimensions[highestDimIndex] - getDimensions()[highestDimIndex]));
+				final int length = elementSize * Math.min(chunkProperties.fastestChunkDim,
+					chunkProperties.fastestChunkDim - (chunkOffset[highestDimIndex] + chunkProperties.chunkDimensions[highestDimIndex] - getDimensions()[highestDimIndex]));
 
 				System.arraycopy(
-					chunkData, chunkInternalOffsets[i], // src
-					dataArray, (dataOffsets[i] + initialChunkOffset) * elementSize, // dest
+					chunkData, chunkProperties.chunkInternalOffsets[i], // src
+					dataArray, (chunkProperties.dataOffsets[i] + initialChunkOffset) * elementSize, // dest
 					length); // length
 			}
 
@@ -157,12 +154,17 @@ public abstract class ChunkedDatasetBase extends DatasetBase implements ChunkedD
 		// These are all the same for every chunk
 		final int[] chunkDimensions = getChunkDimensions();
 		final int[] chunkInternalOffsets = getChunkInternalOffsets(chunkDimensions, elementSize);
-		final int[] dataOffsets = getDataOffsets(chunkInternalOffsets);
-		final int fastestChunkDim = chunkDimensions[chunkDimensions.length - 1];
+
+		//Create new chunk properties object
+		ChunkProperties chunkProperties = new ChunkProperties(
+			getChunkDimensions(),
+			getChunkInternalOffsets(chunkDimensions, elementSize),
+			getDataOffsets(chunkInternalOffsets),
+			chunkDimensions[chunkDimensions.length - 1]
+		);
 
 		// Parallel decoding and filling, this is where all the work is done
-		chunks.parallelStream().forEach(chunk -> fillDataFromChunk(chunk, dataArray, chunkDimensions,
-			chunkInternalOffsets, dataOffsets, fastestChunkDim, elementSize));
+		chunks.parallelStream().forEach(chunk -> fillDataFromChunk(chunk, dataArray, chunkProperties, elementSize));
 
 		return ByteBuffer.wrap(dataArray);
 	}
@@ -322,6 +324,21 @@ public abstract class ChunkedDatasetBase extends DatasetBase implements ChunkedD
 			return lazyPipeline.get().getFilters();
 		} catch (ConcurrentException e) {
 			throw new HdfException("Failed to create filter pipeline", e);
+		}
+	}
+
+	public static class ChunkProperties {
+		protected int[] chunkDimensions;
+		protected int[] chunkInternalOffsets;
+		protected int[] dataOffsets;
+
+		protected int fastestChunkDim;
+
+		public ChunkProperties( int[] chunkDimensions, int[] chunkInternalOffsets, int[] dataOffsets, int fastestChunkDim) {
+			this.chunkDimensions = chunkDimensions;
+			this.chunkInternalOffsets = chunkInternalOffsets;
+			this.dataOffsets = dataOffsets;
+			this.fastestChunkDim = fastestChunkDim;
 		}
 	}
 }

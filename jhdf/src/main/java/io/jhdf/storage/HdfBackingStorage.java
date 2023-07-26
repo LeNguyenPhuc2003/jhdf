@@ -36,6 +36,8 @@ public interface HdfBackingStorage {
 
 	int getSizeOfLengths();
 
+	ByteBuffer getUserBlockBuffer();
+
 	void close();
 
 	long size();

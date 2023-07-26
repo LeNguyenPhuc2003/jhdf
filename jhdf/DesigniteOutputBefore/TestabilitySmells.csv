@@ -1,0 +1,20 @@
+Project Name,Package Name,Type Name,Testability Smell,Cause of the Smell
+.,io.jhdf,Constants,Global State,The tool detected the smell in this class because the class declares global variables. The detected global variables are: NULL; SPACE; UNDEFINED_ADDRESS; PATH_SEPARATOR
+.,io.jhdf,GroupImpl,Excessive Dependency,The tool detected the smell in this class because the class depends on too many dependencies. The total number of dependencies is: 9
+.,io.jhdf,HdfFile,Excessive Dependency,The tool detected the smell in this class because the class depends on too many dependencies. The total number of dependencies is: 14
+.,io.jhdf,ObjectHeader.ObjectHeaderV1,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf,ObjectHeader.ObjectHeaderV2,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf,Superblock.SuperblockV0V1,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf,Superblock.SuperblockV2V3,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf,HdfFileTest,Excessive Dependency,The tool detected the smell in this class because the class depends on too many dependencies. The total number of dependencies is: 11
+.,io.jhdf,NoInstancesTest,Excessive Dependency,The tool detected the smell in this class because the class depends on too many dependencies. The total number of dependencies is: 9
+.,io.jhdf.dataset,DatasetBase,Excessive Dependency,The tool detected the smell in this class because the class depends on too many dependencies. The total number of dependencies is: 11
+.,io.jhdf.filter,BitShuffleFilter,Global State,The tool detected the smell in this class because the class declares global variables. The detected global variables are: NO_COMPRESSION; LZ4_COMPRESSION; ZSTD_COMPRESSION
+.,io.jhdf.filter,FilterPipeline,Global State,The tool detected the smell in this class because the class declares global variables. The detected global variables are: NO_FILTERS
+.,io.jhdf.links,LinksTest,Excessive Dependency,The tool detected the smell in this class because the class depends on too many dependencies. The total number of dependencies is: 10
+.,io.jhdf.object.datatype,CompoundDataType.CompoundDataMember,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf.object.message,DataLayoutMessage.CompactDataLayoutMessage,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf.object.message,DataLayoutMessage.ContiguousDataLayoutMessage,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf.object.message,DataLayoutMessage.ChunkedDataLayoutMessage,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf.object.message,DataLayoutMessage.ChunkedDataLayoutMessageV4,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.
+.,io.jhdf.object.message,FilterPipelineMessage.FilterInfo,Global State,The tool detected the smell in this class because the class can be accessed as a `global` state.

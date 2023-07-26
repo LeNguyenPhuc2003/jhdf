@@ -127,6 +127,11 @@ public class HdfFileChannel implements HdfBackingStorage {
 	}
 
 	@Override
+	public ByteBuffer getUserBlockBuffer() {
+		return mapNoOffset(0, getUserBlockSize());
+	}
+
+	@Override
 	public final void close() {
 		try {
 			fc.close();

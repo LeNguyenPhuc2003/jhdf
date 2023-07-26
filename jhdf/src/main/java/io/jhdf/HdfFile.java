@@ -252,7 +252,7 @@ public class HdfFile implements Group, AutoCloseable {
 	 * @return the buffer containing the user block data
 	 */
 	public ByteBuffer getUserBlockBuffer() {
-		return hdfBackingStorage.mapNoOffset(0, hdfBackingStorage.getUserBlockSize());
+		return hdfBackingStorage.getUserBlockBuffer();
 	}
 
 	/**

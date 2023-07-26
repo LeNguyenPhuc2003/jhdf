@@ -75,7 +75,7 @@ public class FractalHeap {
 	private final long numberOfHugeObjectsInHeap;
 	private final long sizeOfHugeObjectsInHeap;
 	private final long numberOfManagedObjectsInHeap;
-	private final long offsetOfDirectBlockAllocationIteratorInManagedSpace;
+	private final long directBlockIterOffset;
 	private final long amountOfAllocatedManagedSpaceInHeap;
 	private final long amountOfManagedSpaceInHeap;
 	private final long addressOfManagedBlocksFreeSpaceManager;
@@ -109,15 +109,10 @@ public class FractalHeap {
 		bb.get(formatSignatureBytes, 0, formatSignatureBytes.length);
 
 		// Verify signature
-		if (!Arrays.equals(FRACTAL_HEAP_SIGNATURE, formatSignatureBytes)) {
-			throw new HdfException("Fractal heap signature 'FRHP' not matched, at address " + address);
-		}
+		verifySignature(formatSignatureBytes);
 
 		// Version Number
-		final byte version = bb.get();
-		if (version != 0) {
-			throw new HdfException("Unsupported fractal heap version detected. Version: " + version);
-		}
+		verifyVersionNumber(bb.get());
 
 		idLength = readBytesAsUnsignedInt(bb, 2);
 		ioFiltersLength = readBytesAsUnsignedInt(bb, 2);
@@ -136,7 +131,9 @@ public class FractalHeap {
 
 		amountOfManagedSpaceInHeap = readBytesAsUnsignedLong(bb, sb.getSizeOfLengths());
 		amountOfAllocatedManagedSpaceInHeap = readBytesAsUnsignedLong(bb, sb.getSizeOfLengths());
-		offsetOfDirectBlockAllocationIteratorInManagedSpace = readBytesAsUnsignedLong(bb, sb.getSizeOfLengths());
+
+		//The offset of all direct block allocation iterator in the managed space
+		directBlockIterOffset = readBytesAsUnsignedLong(bb, sb.getSizeOfLengths());
 		numberOfManagedObjectsInHeap = readBytesAsUnsignedLong(bb, sb.getSizeOfLengths());
 
 		sizeOfHugeObjectsInHeap = readBytesAsUnsignedLong(bb, sb.getSizeOfLengths());
@@ -161,11 +158,16 @@ public class FractalHeap {
 
 		currentRowsInRootIndirectBlock = readBytesAsUnsignedInt(bb, 2);
 
-		if (ioFiltersLength > 0) {
-			throw new UnsupportedHdfException("IO filters are currently not supported");
-		}
-
 		// Read the root block
+		readRootBlock(addressOfRootBlock);
+
+		bb.rewind();
+		ChecksumUtils.validateChecksum(bb);
+
+		logger.debug("Read fractal heap at address {}, loaded {} direct blocks", address, directBlocks.size());
+	}
+
+	private void readRootBlock(long addressOfRootBlock){
 		if (addressOfRootBlock != UNDEFINED_ADDRESS) {
 			if (currentRowsInRootIndirectBlock == 0) {
 				// Read direct block
@@ -185,11 +187,24 @@ public class FractalHeap {
 				}
 			}
 		}
+	}
 
-		bb.rewind();
-		ChecksumUtils.validateChecksum(bb);
+	private void verifyIOFilters(){
+		if (ioFiltersLength > 0) {
+			throw new UnsupportedHdfException("IO filters are currently not supported");
+		}
+	}
 
-		logger.debug("Read fractal heap at address {}, loaded {} direct blocks", address, directBlocks.size());
+	private void verifySignature(byte[] formatSignatureBytes) throws HdfException{
+		if (!Arrays.equals(FRACTAL_HEAP_SIGNATURE, formatSignatureBytes)) {
+			throw new HdfException("Fractal heap signature 'FRHP' not matched, at address " + address);
+		}
+	}
+
+	private void verifyVersionNumber(byte versionNumber) throws HdfException{
+		if (versionNumber != 0) {
+			throw new HdfException("Unsupported fractal heap version detected. Version: " + versionNumber);
+		}
 	}
 
 	public ByteBuffer getId(ByteBuffer buffer) {
@@ -390,75 +405,75 @@ public class FractalHeap {
 			+ ", numberOfManagedObjectsInHeap=" + numberOfManagedObjectsInHeap + "]";
 	}
 
-	public long getAddress() {
+	protected long getAddress() {
 		return address;
 	}
 
-	public int getMaxDirectBlockSize() {
+	protected int getMaxDirectBlockSize() {
 		return maxDirectBlockSize;
 	}
 
-	public long getMaxSizeOfManagedObjects() {
+	protected long getMaxSizeOfManagedObjects() {
 		return maxSizeOfManagedObjects;
 	}
 
-	public int getIdLength() {
+	protected int getIdLength() {
 		return idLength;
 	}
 
-	public int getIoFiltersLength() {
+	protected int getIoFiltersLength() {
 		return ioFiltersLength;
 	}
 
-	public int getStartingRowsInRootIndirectBlock() {
+	protected int getStartingRowsInRootIndirectBlock() {
 		return startingRowsInRootIndirectBlock;
 	}
 
-	public long getNumberOfTinyObjectsInHeap() {
+	protected long getNumberOfTinyObjectsInHeap() {
 		return numberOfTinyObjectsInHeap;
 	}
 
-	public long getSizeOfTinyObjectsInHeap() {
+	protected long getSizeOfTinyObjectsInHeap() {
 		return sizeOfTinyObjectsInHeap;
 	}
 
-	public long getNumberOfHugeObjectsInHeap() {
+	protected long getNumberOfHugeObjectsInHeap() {
 		return numberOfHugeObjectsInHeap;
 	}
 
-	public long getSizeOfHugeObjectsInHeap() {
+	protected long getSizeOfHugeObjectsInHeap() {
 		return sizeOfHugeObjectsInHeap;
 	}
 
-	public long getNumberOfManagedObjectsInHeap() {
+	protected long getNumberOfManagedObjectsInHeap() {
 		return numberOfManagedObjectsInHeap;
 	}
 
-	public long getOffsetOfDirectBlockAllocationIteratorInManagedSpace() {
-		return offsetOfDirectBlockAllocationIteratorInManagedSpace;
+	protected long getOffsetOfDirectBlockAllocationIteratorInManagedSpace() {
+		return directBlockIterOffset;
 	}
 
-	public long getAmountOfAllocatedManagedSpaceInHeap() {
+	protected long getAmountOfAllocatedManagedSpaceInHeap() {
 		return amountOfAllocatedManagedSpaceInHeap;
 	}
 
-	public long getAmountOfManagedSpaceInHeap() {
+	protected long getAmountOfManagedSpaceInHeap() {
 		return amountOfManagedSpaceInHeap;
 	}
 
-	public long getAddressOfManagedBlocksFreeSpaceManager() {
+	protected long getAddressOfManagedBlocksFreeSpaceManager() {
 		return addressOfManagedBlocksFreeSpaceManager;
 	}
 
-	public long getFreeSpaceInManagedBlocks() {
+	protected long getFreeSpaceInManagedBlocks() {
 		return freeSpaceInManagedBlocks;
 	}
 
-	public long getBTreeAddressOfHugeObjects() {
+	protected long getBTreeAddressOfHugeObjects() {
 		return bTreeAddressOfHugeObjects;
 	}
 
-	public long getNextHugeObjectId() {
+	protected long getNextHugeObjectId() {
 		return nextHugeObjectId;
 	}
 
